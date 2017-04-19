@@ -185,9 +185,9 @@ public final class Uuids {
   }
 
   private static Uuid fromString(final Uuid root, String[] tokens, int index) {
-
+System.out.println("in");
     final int id = Integer.parseInt(tokens[index]);
-
+System.out.println("out");
     final Uuid link = complete(new Uuid() {
       @Override
       public Uuid root() { return root; }

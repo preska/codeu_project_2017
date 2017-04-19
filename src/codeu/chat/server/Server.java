@@ -37,6 +37,8 @@ import codeu.chat.util.Logger;
 import codeu.chat.util.Serializers;
 import codeu.chat.util.connections.Connection;
 
+import java.sql.*;
+
 public final class Server {
 
   private final static Logger.Log LOG = Logger.newLog(Server.class);
@@ -58,6 +60,86 @@ public final class Server {
 
     this.controller = new Controller(id, model);
     this.relay = relay;
+
+
+
+/* Beginning of experimental code */
+    /* Set up database holding persistent data. */
+    try {
+        /* Connect to the database (or create a new one if it does not exist). */
+        java.sql.Connection conn = null;
+        java.sql.Statement statement = null;
+        java.sql.ResultSet result = null;
+
+        Class.forName("org.sqlite.JDBC");
+        conn = DriverManager.getConnection("jdbc:sqlite::test.db");
+
+        /* Set up the tables to hold Users, Conversations, and Messages,
+         * if the tables do not already exist. */
+        statement = conn.createStatement();
+        String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='USERS'";
+        result = statement.executeQuery(query);
+
+        if (result.next()) {
+            System.out.println("USERS already exists.");
+            query = "SELECT * from USERS";
+            result = statement.executeQuery(query);
+
+            while (result.next()) {
+                System.out.println("Adding user record to table.");
+               this.controller.newUser(Uuids.fromString(result.getString("ID")),
+                                        result.getString("NAME"),
+                                        Time.fromMs(result.getLong("CREATION")));
+            }
+        } else {
+            System.out.println("USERS does not exist. Creating table.");
+               query = "CREATE TABLE USERS " + 
+                        "(ID TEXT PRIMARY KEY        NOT NULL," +
+                        "NAME      TEXT             NOT NULL," +
+                        "CREATION  LONG             NOT NULL)";
+                statement.executeUpdate(query);
+
+        }
+
+        /* See if conversations already exist. If they do, cycle through the existing conversations
+         * and add them to the program structures. */
+        query = "SELECT name FROM sqlite_master WHERE type='table' AND name='CONVERSATIONS'";
+        result = statement.executeQuery(query);
+
+
+        if (result.next()) {
+            System.out.println("CONVERSATIONS already exists.");
+            query = "SELECT * from CONVERSATIONS";
+            result = statement.executeQuery(query);
+
+            while (result.next()) {
+               System.out.println("Adding conversation record to table.");
+               this.controller.newConversation(Uuids.fromString(result.getString("ID")), 
+                                            result.getString("TITLE"),
+                                            Uuids.fromString(result.getString("OWNER")), 
+                                            Time.fromMs(result.getLong("CREATION")));
+//TODO: look for messages tables and add them to the structs
+            }
+        } else {
+            System.out.println("CONVERSATIONS does not exist. Creating table.");
+            query = "CREATE TABLE CONVERSATIONS " + 
+                    "(ID TEXT PRIMARY KEY        NOT NULL," +
+                    "OWNER     INT              NOT NULL," +
+                    "CREATION  TEXT             NOT NULL," +
+                    "TITLE     TEXT             NOT NULL)";
+            statement.executeUpdate(query);
+        }
+
+        statement.close();
+        conn.close();
+    } catch(Exception e) {
+        System.err.println(e.getClass().getName() + ": " + e.getMessage());
+        System.exit(0);
+    }
+    System.out.println("Success opening database!");
+
+/* End of experimental code */
+
   }
 
   public void syncWithRelay(int maxReadSize) throws Exception {
