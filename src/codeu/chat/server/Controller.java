@@ -25,6 +25,8 @@ import codeu.chat.util.Logger;
 import codeu.chat.util.Time;
 import codeu.chat.util.Uuid;
 
+import java.sql.*;
+
 public final class Controller implements RawController, BasicController {
 
   private final static Logger.Log LOG = Logger.newLog(Controller.class);
@@ -43,8 +45,8 @@ public final class Controller implements RawController, BasicController {
   }
 
   @Override
-  public User newUser(String name, String hash, String salt) {
-    return newUser(createId(), name, Time.now(), hash, salt);
+  public User newUser(String name, String hash, String salt, boolean databaseAdd) {
+    return newUser(createId(), name, Time.now(), hash, salt, databaseAdd);
   }
 
   @Override
@@ -102,7 +104,7 @@ public final class Controller implements RawController, BasicController {
   }
 
   @Override
-  public User newUser(Uuid id, String name, Time creationTime, String hash, String salt) {
+  public User newUser(Uuid id, String name, Time creationTime, String hash, String salt, boolean databaseAdd) {
 
     User user = null;
 
@@ -110,6 +112,36 @@ public final class Controller implements RawController, BasicController {
 
       user = new User(id, name, creationTime, hash, salt);
       model.add(user);
+
+// Beginning of Added Code
+      if (databaseAdd) {
+        try {
+            java.sql.Connection conn = null;
+            java.sql.Statement statement = null;
+
+            Class.forName("org.sqlite.JDBC");
+            conn = DriverManager.getConnection("jdbc:sqlite::test.db");
+            conn.setAutoCommit(false);
+            statement = conn.createStatement();
+            System.out.println("Right before " + Uuid.toStorableString(user.id));
+            String query = "INSERT OR IGNORE INTO USERS " + "VALUES ('" +
+                            Uuid.toStorableString(user.id) + "', '" + user.name + 
+                            "', " + user.creation.inMs() + ", '" +
+                            user.getPasswordHash() + "', '" + user.getSalt() + "');";
+            System.out.println(query);
+            statement.executeUpdate(query);
+            System.out.println("Right after");
+
+            statement.close();
+            conn.commit();
+            conn.close();
+        } catch (Exception e) {
+            System.err.println(e.getClass().getName() + ": " + e.getMessage());
+            System.exit(0);
+        }      
+        System.out.println("Successfully connected to databse and added user data.");
+      }
+// End of Added Code
 
       LOG.info(
           "newUser success (user.id=%s user.name=%s user.time=%s)",

@@ -66,7 +66,7 @@ public class Controller implements BasicController {
   }
 
   @Override
-  public User newUser(String name, String hash, String salt) {
+  public User newUser(String name, String hash, String salt, boolean databaseAdd) {
 
     User response = null;
 
