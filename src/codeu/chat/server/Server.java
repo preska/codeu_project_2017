@@ -94,7 +94,7 @@ public final class Server {
 
             while (result.next()) {
                 System.out.println("Adding user record to table.");
-                this.controller.newUser(Uuid.fromString(result.getString("ID")),
+                this.controller.newUser(Uuid.parse(result.getString("ID")),
                                         result.getString("NAME"),
                                         Time.fromMs(result.getLong("CREATION")),
                                         result.getString("HASH"),
@@ -125,9 +125,9 @@ public final class Server {
 
             while (result.next()) {
                System.out.println("Adding conversation record to table.");
-               this.controller.newConversation(Uuid.fromString(result.getString("ID")), 
+               this.controller.newConversation(Uuid.parse(result.getString("ID")), 
                                             result.getString("TITLE"),
-                                            Uuid.fromString(result.getString("OWNER")), 
+                                            Uuid.parse(result.getString("OWNER")), 
                                             Time.fromMs(result.getLong("CREATION")));
 //TODO: look for messages tables and add them to the structs
             }
