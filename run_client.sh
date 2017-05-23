@@ -14,6 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LOCAL_MACHINE="localhost@2007"
+HOST="$1"
+PORT="$2"
 
-java -classpath ./bin:./third_party/* codeu.chat.ClientMain "$LOCAL_MACHINE"
+#java -classpath ./bin:./third_party/* codeu.chat.ClientMain "$HOST@$PORT"
+
+#java -classpath ./bin:./third_party/* codeu.chat.ClientMain "$LOCAL_MACHINE"
+if [[ "$HOST" == "" || "$PORT" == "" ]] ; then
+  echo 'usage: <HOST> <PORT>'
+  exit 1
+fi
+
+#cd './bin'
+#java codeu.chat.ClientMain "$HOST@$PORT"
+java -classpath ./bin:./third_party/* codeu.chat.ClientMain "$HOST@$PORT"
+

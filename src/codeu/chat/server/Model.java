@@ -20,10 +20,9 @@ import codeu.chat.common.Conversation;
 import codeu.chat.common.ConversationSummary;
 import codeu.chat.common.LinearUuidGenerator;
 import codeu.chat.common.Message;
-import codeu.chat.common.Time;
 import codeu.chat.common.User;
-import codeu.chat.common.Uuid;
-import codeu.chat.common.Uuids;
+import codeu.chat.util.Time;
+import codeu.chat.util.Uuid;
 import codeu.chat.util.store.Store;
 import codeu.chat.util.store.StoreAccessor;
 
@@ -79,7 +78,7 @@ public final class Model {
     userByText.insert(user.name, user);
 
 // Beginning of Added Code
-	try {
+/*	try {
 		java.sql.Connection conn = null;
 		java.sql.Statement statement = null;
 		java.sql.ResultSet result = null;
@@ -88,10 +87,11 @@ public final class Model {
 		conn = DriverManager.getConnection("jdbc:sqlite::test.db");
 
 		statement = conn.createStatement();
-        System.out.println("Right before " + Uuids.toString(user.id));
-		String query = "INSERT INTO USERS " +
-					   "VALUES ('" + Uuids.toString(user.id) + "', '" + 
-                        user.name + "', " + user.creation.inMs() + ");";
+        System.out.println("Right before " + Uuid.toStorableString(user.id));
+		String query = "INSERT OR IGNORE INTO USERS " +
+					   "VALUES ('" + Uuid.toStorableString(user.id) + "', '" + 
+                        user.name + "', " + user.creation.inMs() + ", '" +
+                        user.getPasswordHash() + "', '" + user.getSalt() + "');";
         System.out.println(query);
 		statement.executeUpdate(query);
         System.out.println("Right after");
@@ -106,6 +106,7 @@ public final class Model {
 	}
 	System.out.println("Successfully connected to database and added user data.");
 // End of Added Code
+*/
   }
 
   public StoreAccessor<Uuid, User> userById() {
@@ -140,8 +141,8 @@ public final class Model {
 
 		statement = conn.createStatement();
 		String query = "INSERT INTO CONVERSATIONS (ID, OWNER, CREATION, TITLE) " +
-					   "VALUES ('" + Uuids.toString(conversation.id) + "', '" 
-                                + Uuids.toString(conversation.owner) + "', " 
+					   "VALUES ('" + Uuid.toStorableString(conversation.id) + "', '" 
+                                + Uuid.toStorableString(conversation.owner) + "', " 
 						+ conversation.creation.inMs() + ", '" + conversation.title + "');";
 		statement.executeUpdate(query);
 
