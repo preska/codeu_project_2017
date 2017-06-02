@@ -41,7 +41,7 @@ public class Controller implements BasicController {
   }
 
   @Override
-  public Message newMessage(Uuid author, Uuid conversation, String body) {
+  public Message newMessage(Uuid author, Uuid conversation, String body, boolean databaseAdd) {
 
     Message response = null;
 

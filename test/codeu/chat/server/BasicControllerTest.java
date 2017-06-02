@@ -85,7 +85,8 @@ public final class BasicControllerTest {
     final Message message = controller.newMessage(
         user.id,
         conversation.id,
-        "Hello World");
+        "Hello World",
+        false);
 
     assertFalse(
         "Check that the message has a valid reference",

@@ -74,6 +74,8 @@ public final class Server {
         java.sql.Connection conn = null;
         java.sql.Statement statement = null;
         java.sql.ResultSet result = null;
+        java.sql.ResultSet result1 = null;
+        java.sql.Statement statement1 = null;
 
         Class.forName("org.sqlite.JDBC");
         conn = DriverManager.getConnection("jdbc:sqlite::test.db");
@@ -81,59 +83,82 @@ public final class Server {
         /* Set up the tables to hold Users, Conversations, and Messages,
          * if the tables do not already exist. */
         statement = conn.createStatement();
+        statement1 = conn.createStatement();
 
         String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='USERS'";
         result = statement.executeQuery(query);
 
 
+        /* If the users table already exists, check if there are users to be added
+         * to the data structures. */
         if (result.next()) {
-            System.out.println("USERS already exists.");
-
             query = "SELECT * from USERS";
             result = statement.executeQuery(query);
 
+            /* If users are already present in persistent storage, add them to the
+             * data structures. */
             while (result.next()) {
-                System.out.println("Adding user record to table.");
                 this.controller.newUser(Uuid.parse(result.getString("ID")),
                                         result.getString("NAME"),
                                         Time.fromMs(result.getLong("CREATION")),
                                         result.getString("HASH"),
                                         result.getString("SALT"), false);
+
             }
 
         } else {
-            System.out.println("USERS does not exist. Creating table.");
-               query = "CREATE TABLE USERS " + 
-                        "(ID TEXT PRIMARY KEY        NOT NULL," +
-                        "NAME      TEXT             NOT NULL," +
-                        "CREATION  LONG             NOT NULL," +
-                        "HASH      TEXT             NOT NULL," +
-                        "SALT      TEXT             NOT NULL)";
-                statement.executeUpdate(query);
+            /* Otherwise, create a new table to hold users. */
+            query = "CREATE TABLE USERS " + 
+                    "(ID TEXT PRIMARY KEY        NOT NULL," +
+                    "NAME      TEXT             NOT NULL," +
+                    "CREATION  LONG             NOT NULL," +
+                    "HASH      TEXT             NOT NULL," +
+                    "SALT      TEXT             NOT NULL)";
+            statement.executeUpdate(query);
 
         }
-        /* See if conversations already exist. If they do, cycle through the existing conversations
-         * and add them to the program structures. */
+
         query = "SELECT name FROM sqlite_master WHERE type='table' AND name='CONVERSATIONS'";
         result = statement.executeQuery(query);
 
-System.out.println("Begin conversation check");
+        /* See if conversations already exist. If they do, cycle through the existing conversations
+         * and add them to the program structures. */
         if (result.next()) {
-            System.out.println("CONVERSATIONS already exists.");
             query = "SELECT * from CONVERSATIONS";
             result = statement.executeQuery(query);
+            
 
             while (result.next()) {
-               System.out.println("Adding conversation record to table.");
                this.controller.newConversation(Uuid.parse(result.getString("ID")), 
                                             result.getString("TITLE"),
                                             Uuid.parse(result.getString("OWNER")), 
                                             Time.fromMs(result.getLong("CREATION")),
                                             false);
-//TODO: look for messages tables and add them to the structs
+
+
+              /* Look for any messages tables tied to conversations (each conversation
+               * has its own table for its messages), and add
+               * existing messages to the program structures. */
+              query = "SELECT name FROM sqlite_master WHERE type='table' AND name='MESSAGES_" + result.getString("ID") + "'";
+              result1 = statement1.executeQuery(query);
+
+              if (result1.next()) {
+                query = "SELECT * from [MESSAGES_" + result.getString("ID") + "]";
+                result1 = statement1.executeQuery(query);
+
+                /* Add messages to the conversation */
+                while (result1.next()) {
+                  this.controller.newMessage(Uuid.parse(result1.getString("ID")),
+                                             Uuid.parse(result1.getString("AUTHOR")),
+                                             Uuid.parse(result.getString("ID")),
+                                             result1.getString("CONTENT"),
+                                             Time.fromMs(result1.getLong("CREATION")),
+                                             false);
+                }
+              }
             }
         } else {
-            System.out.println("CONVERSATIONS does not exist. Creating table.");
+            /* Conversations table does not already exist, so make one. */
             query = "CREATE TABLE CONVERSATIONS " + 
                     "(ID TEXT PRIMARY KEY        NOT NULL," +
                     "OWNER     INT              NOT NULL," +
@@ -143,15 +168,12 @@ System.out.println("Begin conversation check");
         }
 
         statement.close();
+        statement1.close();
         conn.close();
     } catch(Exception e) {
         System.err.println(e.getClass().getName() + ": " + e.getMessage());
         System.exit(0);
     }
-    System.out.println("Success opening database!");
-
-/* End of experimental code */
-
 
     timeline.scheduleNow(new Runnable() {
       @Override
@@ -214,7 +236,7 @@ System.out.println("Begin conversation check");
       final Uuid conversation = Uuid.SERIALIZER.read(in);
       final String content = Serializers.STRING.read(in);
 
-      final Message message = controller.newMessage(author, conversation, content);
+      final Message message = controller.newMessage(author, conversation, content, true);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_MESSAGE_RESPONSE);
       Serializers.nullable(Message.SERIALIZER).write(out, message);
@@ -379,7 +401,7 @@ System.out.println("Begin conversation check");
                                       user.id,
                                       conversation.id,
                                       relayMessage.text(),
-                                      relayMessage.time());
+                                      relayMessage.time(), true);
     }
   }
 

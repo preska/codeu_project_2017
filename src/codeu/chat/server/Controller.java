@@ -41,8 +41,8 @@ public final class Controller implements RawController, BasicController {
   }
 
   @Override
-  public Message newMessage(Uuid author, Uuid conversation, String body) {
-    return newMessage(createId(), author, conversation, body, Time.now());
+  public Message newMessage(Uuid author, Uuid conversation, String body, boolean databaseAdd) {
+    return newMessage(createId(), author, conversation, body, Time.now(), databaseAdd);
   }
 
   @Override
@@ -56,7 +56,7 @@ public final class Controller implements RawController, BasicController {
   }
 
   @Override
-  public Message newMessage(Uuid id, Uuid author, Uuid conversation, String body, Time creationTime) {
+  public Message newMessage(Uuid id, Uuid author, Uuid conversation, String body, Time creationTime, boolean databaseAdd) {
 
     final User foundUser = model.userById().first(author);
     final Conversation foundConversation = model.conversationById().first(conversation);
@@ -99,6 +99,72 @@ public final class Controller implements RawController, BasicController {
       if (!foundConversation.users.contains(foundUser)) {
         foundConversation.users.add(foundUser.id);
       }
+
+        /* Add message to persistent database. */
+        if (databaseAdd) {
+	        try {
+                java.sql.Connection conn = null;
+                java.sql.Statement statement = null;
+		        java.sql.ResultSet result = null;
+
+	        	Class.forName("org.sqlite.JDBC");
+        		conn = DriverManager.getConnection("jdbc:sqlite::test.db");
+                conn.setAutoCommit(false);
+    		    statement = conn.createStatement();
+
+                String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='[MESSAGES_" + Uuid.toStorableString(foundConversation.id) + "]'";
+                result = statement.executeQuery(query);
+
+                /* Create a table to hold the messages for this conversation if it
+                 * does not already exist. */
+                if (result.next()) {
+                    query = "INSERT OR IGNORE INTO [MESSAGES_" + 
+                            Uuid.toStorableString(foundConversation.id) +
+                            "] (ID, NEXT, PREVIOUS, CREATION, AUTHOR, CONTENT)" +
+                            " VALUES ('" + Uuid.toStorableString(message.id) + 
+                            "', '" + Uuid.toStorableString(message.next) + 
+                            "',  '"  +  Uuid.toStorableString(message.previous) +
+                            "', '" + creationTime + "', '" + 
+                            Uuid.toStorableString(author) + 
+                            "', '" + body + "');";
+
+           	    	statement.executeUpdate(query);
+                } else {
+                    query = "CREATE table IF NOT EXISTS [MESSAGES_" + 
+                            Uuid.toStorableString(foundConversation.id) +
+                            "] (ID TEXT PRIMARY KEY       NOT NULL," +
+                            "NEXT TEXT                  NOT NULL," +
+                            "PREVIOUS TEXT              NOT NULL," +
+                            "CREATION TEXT              NOT NULL," +
+                            "AUTHOR TEXT                NOT NULL," +
+                            "CONTENT TEXT               NOT NULL)";
+                    statement.executeUpdate(query);
+
+
+                    query = "INSERT OR IGNORE INTO [MESSAGES_" + 
+                            Uuid.toStorableString(foundConversation.id) +
+                            "] (ID, NEXT, PREVIOUS, CREATION, AUTHOR, CONTENT)" +
+                            " VALUES ('" + Uuid.toStorableString(message.id) + 
+                            "', '" + Uuid.toStorableString(message.next) + 
+                            "',  '"  +  Uuid.toStorableString(message.previous) +
+                            "', '" + creationTime + "', '" + 
+                            Uuid.toStorableString(author) + 
+                            "', '" + body + "');";
+
+    	    	    statement.executeUpdate(query);
+                }
+
+                statement.close();
+    		    conn.commit();
+    	    	conn.close();
+
+	        } catch (Exception e) {
+		        System.err.println(e.getClass().getName() + ": " + e.getMessage());
+		        System.exit(0);
+        	}
+    	System.out.println("Successfully connected to database and added user data.");
+        }
+
     }
 
     return message;
@@ -114,7 +180,7 @@ public final class Controller implements RawController, BasicController {
       user = new User(id, name, creationTime, hash, salt);
       model.add(user);
 
-// Beginning of Added Code
+      /* Add user to persistent storage. */
       if (databaseAdd) {
         try {
             java.sql.Connection conn = null;
@@ -140,9 +206,7 @@ public final class Controller implements RawController, BasicController {
             System.err.println(e.getClass().getName() + ": " + e.getMessage());
             System.exit(0);
         }      
-        System.out.println("Successfully connected to databse and added user data.");
       }
-// End of Added Code
 
       LOG.info(
           "newUser success (user.id=%s user.name=%s user.time=%s)",
@@ -174,10 +238,9 @@ public final class Controller implements RawController, BasicController {
       conversation = new Conversation(id, owner, creationTime, title);
       model.add(conversation);
 
-    // Beginning of Added Code
+        /* Add conversation to persistent storage. */
         if (databaseAdd) {
 	        try {
-System.out.println("Trying to add new conversation...\n");
                 java.sql.Connection conn = null;
                 java.sql.Statement statement = null;
 		        java.sql.ResultSet result = null;
@@ -200,9 +263,7 @@ System.out.println("Trying to add new conversation...\n");
 		        System.err.println(e.getClass().getName() + ": " + e.getMessage());
 		        System.exit(0);
         	}
-    	System.out.println("Successfully connected to database and added user data.");
         }
-    // End of Added Code
     
 
       LOG.info("Conversation added: " + conversation.id);
