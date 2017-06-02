@@ -51,8 +51,8 @@ public final class Controller implements RawController, BasicController {
   }
 
   @Override
-  public Conversation newConversation(String title, Uuid owner) {
-    return newConversation(createId(), title, owner, Time.now());
+  public Conversation newConversation(String title, Uuid owner, boolean databaseAdd) {
+    return newConversation(createId(), title, owner, Time.now(), databaseAdd);
   }
 
   @Override
@@ -164,7 +164,7 @@ public final class Controller implements RawController, BasicController {
   }
 
   @Override
-  public Conversation newConversation(Uuid id, String title, Uuid owner, Time creationTime) {
+  public Conversation newConversation(Uuid id, String title, Uuid owner, Time creationTime, boolean databaseAdd) {
 
     final User foundOwner = model.userById().first(owner);
 
@@ -173,6 +173,37 @@ public final class Controller implements RawController, BasicController {
     if (foundOwner != null && isIdFree(id)) {
       conversation = new Conversation(id, owner, creationTime, title);
       model.add(conversation);
+
+    // Beginning of Added Code
+        if (databaseAdd) {
+	        try {
+System.out.println("Trying to add new conversation...\n");
+                java.sql.Connection conn = null;
+                java.sql.Statement statement = null;
+		        java.sql.ResultSet result = null;
+
+	        	Class.forName("org.sqlite.JDBC");
+        		conn = DriverManager.getConnection("jdbc:sqlite::test.db");
+                conn.setAutoCommit(false);
+    		    statement = conn.createStatement();
+		        String query = "INSERT INTO CONVERSATIONS (ID, OWNER, CREATION, TITLE) " +
+			        		   "VALUES ('" + Uuid.toStorableString(conversation.id) + "', '" 
+                                        + Uuid.toStorableString(conversation.owner) + "', " 
+				    	    	+ conversation.creation.inMs() + ", '" + conversation.title + "');";
+    	    	statement.executeUpdate(query);
+
+                statement.close();
+    		    conn.commit();
+    	    	conn.close();
+
+	        } catch (Exception e) {
+		        System.err.println(e.getClass().getName() + ": " + e.getMessage());
+		        System.exit(0);
+        	}
+    	System.out.println("Successfully connected to database and added user data.");
+        }
+    // End of Added Code
+    
 
       LOG.info("Conversation added: " + conversation.id);
     }

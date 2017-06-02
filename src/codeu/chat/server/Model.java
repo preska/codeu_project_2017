@@ -131,7 +131,7 @@ public final class Model {
     conversationByText.insert(conversation.title, conversation);
 
 // Beginning of Added Code
-	try {
+/*	try {
 		java.sql.Connection conn = null;
 		java.sql.Statement statement = null;
 		java.sql.ResultSet result = null;
@@ -156,7 +156,7 @@ public final class Model {
 	}
 	System.out.println("Successfully connected to database and added user data.");
 // End of Added Code
-
+*/
 //TODO: add conversation to persistent storage
   }
 

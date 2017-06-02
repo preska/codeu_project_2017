@@ -73,7 +73,8 @@ public final class RawControllerTest {
         conversationId,
         "conversation",
         user.id,
-        Time.now());
+        Time.now(),
+        false);
 
     assertFalse(
         "Check that conversation has a valid reference",
@@ -99,7 +100,8 @@ public final class RawControllerTest {
         conversationId,
         "conversation",
         user.id,
-        Time.now());
+        Time.now(),
+        false);
 
     assertFalse(
         "Check that conversation has a valid reference",

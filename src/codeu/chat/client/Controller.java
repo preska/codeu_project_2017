@@ -93,7 +93,7 @@ public class Controller implements BasicController {
   }
 
   @Override
-  public Conversation newConversation(String title, Uuid owner)  {
+  public Conversation newConversation(String title, Uuid owner, boolean databaseAdd)  {
 
     Conversation response = null;
 
