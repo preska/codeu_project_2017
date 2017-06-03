@@ -14,5 +14,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd './bin'
-java codeu.chat.ServerMain "100.101" "ABABAB" "2007"
+java -classpath ./bin:./third_party/* codeu.chat.ServerMain "100.101" "ABABAB" "2007"

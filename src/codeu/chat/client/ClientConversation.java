@@ -89,7 +89,7 @@ public final class ClientConversation {
   public void startConversation(String title, Uuid owner) {
     final boolean validInputs = isValidTitle(title);
 
-    final Conversation conv = (validInputs) ? controller.newConversation(title, owner) : null;
+    final Conversation conv = (validInputs) ? controller.newConversation(title, owner, false) : null;
 
     if (conv == null) {
       System.out.format("Error: conversation not created - %s.\n",

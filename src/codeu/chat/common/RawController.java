@@ -25,18 +25,18 @@ public interface RawController {
   //
   // Add a new message to the model with a specific id. If the id is already
   // in use, the call will fail and null will be returned.
-  Message newMessage(Uuid id, Uuid author, Uuid conversation, String body, Time creationTime);
+  Message newMessage(Uuid id, Uuid author, Uuid conversation, String body, Time creationTime, boolean databaseAdd);
 
   // NEW USER
   //
   // Add a new user to the model with a specific id. If the id is already in
   // use, the call will fail and null will be returned.
-  User newUser(Uuid id, String name, String password, Time creationTime);
+  User newUser(Uuid id, String name, String password, Time creationTime, boolean databaseAdd);
 
   // NEW CONVERSATION
   //
   // Add a new conversation to the model with a specific if. If the id is
   // already in use, the call will fail and null will be returned.
-  Conversation newConversation(Uuid id, String title, Uuid owner, Time creationTime);
+  Conversation newConversation(Uuid id, String title, Uuid owner, Time creationTime, boolean databaseAdd);
 
 }

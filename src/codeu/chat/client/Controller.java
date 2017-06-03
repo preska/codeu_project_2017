@@ -41,7 +41,7 @@ public class Controller implements BasicController {
   }
 
   @Override
-  public Message newMessage(Uuid author, Uuid conversation, String body) {
+  public Message newMessage(Uuid author, Uuid conversation, String body, boolean databaseAdd) {
 
     Message response = null;
 
@@ -66,7 +66,7 @@ public class Controller implements BasicController {
   }
 
   @Override
-  public User newUser(String name, String password) {
+  public User newUser(String name, String password, boolean databaseAdd) {
 
     User response = null;
 
@@ -93,7 +93,7 @@ public class Controller implements BasicController {
 
     
   @Override
-  public Conversation newConversation(String title, Uuid owner)  {
+  public Conversation newConversation(String title, Uuid owner, boolean databaseAdd)  {
 
     Conversation response = null;
 
