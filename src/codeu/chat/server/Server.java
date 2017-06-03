@@ -38,6 +38,8 @@ import codeu.chat.util.Serializers;
 import codeu.chat.util.Timeline;
 import codeu.chat.util.connections.Connection;
 
+import java.sql.*;
+
 public final class Server {
 
   private static final Logger.Log LOG = Logger.newLog(Server.class);
@@ -63,6 +65,115 @@ public final class Server {
 
     this.controller = new Controller(id, model);
     this.relay = relay;
+
+
+
+/* Beginning of experimental code */
+    /* Set up database holding persistent data. */
+    try {
+        /* Connect to the database (or create a new one if it does not exist). */
+        java.sql.Connection conn = null;
+        java.sql.Statement statement = null;
+        java.sql.ResultSet result = null;
+        java.sql.ResultSet result1 = null;
+        java.sql.Statement statement1 = null;
+
+        Class.forName("org.sqlite.JDBC");
+        conn = DriverManager.getConnection("jdbc:sqlite::test.db");
+
+        /* Set up the tables to hold Users, Conversations, and Messages,
+         * if the tables do not already exist. */
+        statement = conn.createStatement();
+        statement1 = conn.createStatement();
+
+        String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='USERS'";
+        result = statement.executeQuery(query);
+
+
+        /* If the users table already exists, check if there are users to be added
+         * to the data structures. */
+        if (result.next()) {
+            LOG.info("Adding user to data structures\n");
+            query = "SELECT * from USERS";
+            result = statement.executeQuery(query);
+
+            /* If users are already present in persistent storage, add them to the
+             * data structures. */
+            while (result.next()) {
+                this.controller.newUser(Uuids.parse(result.getString("ID")),
+                                        result.getString("NAME"),
+                                        result.getString("PASSWORD"),
+                                        Time.fromMs(result.getLong("CREATION")), false);
+
+            }
+
+        } else {
+            /* Otherwise, create a new table to hold users. */
+            query = "CREATE TABLE USERS " + 
+                    "(ID TEXT PRIMARY KEY        NOT NULL," +
+                    "NAME      TEXT             NOT NULL," +
+                    "CREATION  LONG             NOT NULL," +
+                    "PASSWORD  TEXT             NOT NULL)";
+            statement.executeUpdate(query);
+
+        }
+
+        query = "SELECT name FROM sqlite_master WHERE type='table' AND name='CONVERSATIONS'";
+        result = statement.executeQuery(query);
+
+        /* See if conversations already exist. If they do, cycle through the existing conversations
+         * and add them to the program structures. */
+        if (result.next()) {
+            query = "SELECT * from CONVERSATIONS";
+            result = statement.executeQuery(query);
+            
+
+            while (result.next()) {
+               this.controller.newConversation(Uuids.parse(result.getString("ID")), 
+                                            result.getString("TITLE"),
+                                            Uuids.parse(result.getString("OWNER")), 
+                                            Time.fromMs(result.getLong("CREATION")),
+                                            false);
+
+
+              /* Look for any messages tables tied to conversations (each conversation
+               * has its own table for its messages), and add
+               * existing messages to the program structures. */
+              query = "SELECT name FROM sqlite_master WHERE type='table' AND name='MESSAGES_" + result.getString("ID") + "'";
+              result1 = statement1.executeQuery(query);
+
+              if (result1.next()) {
+                query = "SELECT * from [MESSAGES_" + result.getString("ID") + "]";
+                result1 = statement1.executeQuery(query);
+
+                /* Add messages to the conversation */
+                while (result1.next()) {
+                  this.controller.newMessage(Uuids.parse(result1.getString("ID")),
+                                             Uuids.parse(result1.getString("AUTHOR")),
+                                             Uuids.parse(result.getString("ID")),
+                                             result1.getString("CONTENT"),
+                                             Time.fromMs(result1.getLong("CREATION")),
+                                             false);
+                }
+              }
+            }
+        } else {
+            /* Conversations table does not already exist, so make one. */
+            query = "CREATE TABLE CONVERSATIONS " + 
+                    "(ID TEXT PRIMARY KEY        NOT NULL," +
+                    "OWNER     INT              NOT NULL," +
+                    "CREATION  TEXT             NOT NULL," +
+                    "TITLE     TEXT             NOT NULL)";
+            statement.executeUpdate(query);
+        }
+
+        statement.close();
+        statement1.close();
+        conn.close();
+    } catch(Exception e) {
+        System.err.println(e.getClass().getName() + ": " + e.getMessage());
+        System.exit(0);
+    }
 
     timeline.scheduleNow(new Runnable() {
       @Override
@@ -125,7 +236,7 @@ public final class Server {
       final Uuid conversation = Uuids.SERIALIZER.read(in);
       final String content = Serializers.STRING.read(in);
 
-      final Message message = controller.newMessage(author, conversation, content);
+      final Message message = controller.newMessage(author, conversation, content, true);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_MESSAGE_RESPONSE);
       Serializers.nullable(Message.SERIALIZER).write(out, message);
@@ -140,7 +251,7 @@ public final class Server {
       final String name = Serializers.STRING.read(in);
       final String password = Serializers.STRING.read(in);
 
-      final User user = controller.newUser(name, password);
+      final User user = controller.newUser(name, password, false);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_USER_RESPONSE);
       Serializers.nullable(User.SERIALIZER).write(out, user);
@@ -150,7 +261,7 @@ public final class Server {
       final String title = Serializers.STRING.read(in);
       final Uuid owner = Uuids.SERIALIZER.read(in);
 
-      final Conversation conversation = controller.newConversation(title, owner);
+      final Conversation conversation = controller.newConversation(title, owner, true);
 
       Serializers.INTEGER.write(out, NetworkCode.NEW_CONVERSATION_RESPONSE);
       Serializers.nullable(Conversation.SERIALIZER).write(out, conversation);
@@ -275,10 +386,6 @@ public final class Server {
 
     User user = model.userById().first(relayUser.id());
 
-    // if (user == null) {
-    //	user = controller.newUser(relayUser.id(), relayUser.text(), relayUser.time());
-    //}
-
     Conversation conversation = model.conversationById().first(relayConversation.id());
 
     if (conversation == null) {
@@ -289,7 +396,7 @@ public final class Server {
       conversation = controller.newConversation(relayConversation.id(),
                                                 relayConversation.text(),
                                                 user.id,
-                                                relayConversation.time());
+                                                relayConversation.time(), true);
     }
 
     Message message = model.messageById().first(relayMessage.id());
@@ -299,7 +406,7 @@ public final class Server {
                                       user.id,
                                       conversation.id,
                                       relayMessage.text(),
-                                      relayMessage.time());
+                                      relayMessage.time(), true);
     }
   }
 

@@ -48,7 +48,7 @@ public final class RawControllerTest {
   @Test
   public void testAddUser() {
 
-    final User user = controller.newUser(userId, "user", "password", Time.now());
+    final User user = controller.newUser(userId, "user", "password", Time.now(), false);
 
     assertFalse(
         "Check that user has a valid reference",
@@ -61,7 +61,7 @@ public final class RawControllerTest {
   @Test
   public void testAddConversation() {
 
-    final User user = controller.newUser(userId, "user", "password", Time.now());
+    final User user = controller.newUser(userId, "user", "password", Time.now(), false);
 
     assertFalse(
         "Check that user has a valid reference",
@@ -74,7 +74,8 @@ public final class RawControllerTest {
         conversationId,
         "conversation",
         user.id,
-        Time.now());
+        Time.now(),
+        false);
 
     assertFalse(
         "Check that conversation has a valid reference",
@@ -87,7 +88,7 @@ public final class RawControllerTest {
   @Test
   public void testAddMessage() {
 
-    final User user = controller.newUser(userId, "user", "password", Time.now());
+    final User user = controller.newUser(userId, "user", "password", Time.now(), false);
 
     assertFalse(
         "Check that user has a valid reference",
@@ -100,7 +101,8 @@ public final class RawControllerTest {
         conversationId,
         "conversation",
         user.id,
-        Time.now());
+        Time.now(),
+        false);
 
     assertFalse(
         "Check that conversation has a valid reference",
@@ -114,7 +116,8 @@ public final class RawControllerTest {
         user.id,
         conversation.id,
         "Hello World",
-        Time.now());
+        Time.now(),
+        false);
 
     assertFalse(
         "Check that the message has a valid reference",

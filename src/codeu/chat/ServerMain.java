@@ -31,6 +31,8 @@ import codeu.chat.util.connections.Connection;
 import codeu.chat.util.connections.ConnectionSource;
 import codeu.chat.util.connections.ServerConnectionSource;
 
+import java.sql.*;
+
 final class ServerMain {
 
   private static final Logger.Log LOG = Logger.newLog(ServerMain.class);
