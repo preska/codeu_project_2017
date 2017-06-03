@@ -93,16 +93,17 @@ public final class Server {
         /* If the users table already exists, check if there are users to be added
          * to the data structures. */
         if (result.next()) {
+            LOG.info("Adding user to data structures\n");
             query = "SELECT * from USERS";
             result = statement.executeQuery(query);
 
             /* If users are already present in persistent storage, add them to the
              * data structures. */
             while (result.next()) {
-                this.controller.newUser(Uuid.parse(result.getString("ID")),
+                this.controller.newUser(Uuids.parse(result.getString("ID")),
                                         result.getString("NAME"),
-                                        Time.fromMs(result.getLong("CREATION")),
-                                        result.getString("PASSWORD"), false);
+                                        result.getString("PASSWORD"),
+                                        Time.fromMs(result.getLong("CREATION")), false);
 
             }
 
@@ -128,9 +129,9 @@ public final class Server {
             
 
             while (result.next()) {
-               this.controller.newConversation(Uuid.parse(result.getString("ID")), 
+               this.controller.newConversation(Uuids.parse(result.getString("ID")), 
                                             result.getString("TITLE"),
-                                            Uuid.parse(result.getString("OWNER")), 
+                                            Uuids.parse(result.getString("OWNER")), 
                                             Time.fromMs(result.getLong("CREATION")),
                                             false);
 
@@ -147,9 +148,9 @@ public final class Server {
 
                 /* Add messages to the conversation */
                 while (result1.next()) {
-                  this.controller.newMessage(Uuid.parse(result1.getString("ID")),
-                                             Uuid.parse(result1.getString("AUTHOR")),
-                                             Uuid.parse(result.getString("ID")),
+                  this.controller.newMessage(Uuids.parse(result1.getString("ID")),
+                                             Uuids.parse(result1.getString("AUTHOR")),
+                                             Uuids.parse(result.getString("ID")),
                                              result1.getString("CONTENT"),
                                              Time.fromMs(result1.getLong("CREATION")),
                                              false);

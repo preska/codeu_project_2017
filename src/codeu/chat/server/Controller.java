@@ -113,26 +113,26 @@ public final class Controller implements RawController, BasicController {
                 conn.setAutoCommit(false);
     		    statement = conn.createStatement();
 
-                String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='[MESSAGES_" + Uuid.toStorableString(foundConversation.id) + "]'";
+                String query = "SELECT name FROM sqlite_master WHERE type='table' AND name='[MESSAGES_" + Uuids.toStorableString(foundConversation.id) + "]'";
                 result = statement.executeQuery(query);
 
                 /* Create a table to hold the messages for this conversation if it
                  * does not already exist. */
                 if (result.next()) {
                     query = "INSERT OR IGNORE INTO [MESSAGES_" + 
-                            Uuid.toStorableString(foundConversation.id) +
+                            Uuids.toStorableString(foundConversation.id) +
                             "] (ID, NEXT, PREVIOUS, CREATION, AUTHOR, CONTENT)" +
-                            " VALUES ('" + Uuid.toStorableString(message.id) + 
-                            "', '" + Uuid.toStorableString(message.next) + 
-                            "',  '"  +  Uuid.toStorableString(message.previous) +
+                            " VALUES ('" + Uuids.toStorableString(message.id) + 
+                            "', '" + Uuids.toStorableString(message.next) + 
+                            "',  '"  +  Uuids.toStorableString(message.previous) +
                             "', '" + creationTime + "', '" + 
-                            Uuid.toStorableString(author) + 
+                            Uuids.toStorableString(author) + 
                             "', '" + body + "');";
 
            	    	statement.executeUpdate(query);
                 } else {
                     query = "CREATE table IF NOT EXISTS [MESSAGES_" + 
-                            Uuid.toStorableString(foundConversation.id) +
+                            Uuids.toStorableString(foundConversation.id) +
                             "] (ID TEXT PRIMARY KEY       NOT NULL," +
                             "NEXT TEXT                  NOT NULL," +
                             "PREVIOUS TEXT              NOT NULL," +
@@ -143,13 +143,13 @@ public final class Controller implements RawController, BasicController {
 
 
                     query = "INSERT OR IGNORE INTO [MESSAGES_" + 
-                            Uuid.toStorableString(foundConversation.id) +
+                            Uuids.toStorableString(foundConversation.id) +
                             "] (ID, NEXT, PREVIOUS, CREATION, AUTHOR, CONTENT)" +
-                            " VALUES ('" + Uuid.toStorableString(message.id) + 
-                            "', '" + Uuid.toStorableString(message.next) + 
-                            "',  '"  +  Uuid.toStorableString(message.previous) +
+                            " VALUES ('" + Uuids.toStorableString(message.id) + 
+                            "', '" + Uuids.toStorableString(message.next) + 
+                            "',  '"  +  Uuids.toStorableString(message.previous) +
                             "', '" + creationTime + "', '" + 
-                            Uuid.toStorableString(author) + 
+                            Uuids.toStorableString(author) + 
                             "', '" + body + "');";
 
     	    	    statement.executeUpdate(query);
@@ -185,6 +185,7 @@ public final class Controller implements RawController, BasicController {
       /* Add user to persistent storage. */
       if (databaseAdd) {
         try {
+            LOG.info("Adding user to database.");
             java.sql.Connection conn = null;
             java.sql.Statement statement = null;
 
@@ -192,9 +193,9 @@ public final class Controller implements RawController, BasicController {
             conn = DriverManager.getConnection("jdbc:sqlite::test.db");
             conn.setAutoCommit(false);
             statement = conn.createStatement();
-            System.out.println("Right before " + Uuid.toStorableString(user.id));
+            System.out.println("Right before " + Uuids.toStorableString(user.id));
             String query = "INSERT OR IGNORE INTO USERS " + "VALUES ('" +
-                            Uuid.toStorableString(user.id) + "', '" + user.name + 
+                            Uuids.toStorableString(user.id) + "', '" + user.name + 
                             "', " + user.creation.inMs() + ", '" +
                             password + "');";
             System.out.println(query);
@@ -252,8 +253,8 @@ public final class Controller implements RawController, BasicController {
                 conn.setAutoCommit(false);
     		    statement = conn.createStatement();
 		        String query = "INSERT INTO CONVERSATIONS (ID, OWNER, CREATION, TITLE) " +
-			        		   "VALUES ('" + Uuid.toStorableString(conversation.id) + "', '" 
-                                        + Uuid.toStorableString(conversation.owner) + "', " 
+			        		   "VALUES ('" + Uuids.toStorableString(conversation.id) + "', '" 
+                                        + Uuids.toStorableString(conversation.owner) + "', " 
 				    	    	+ conversation.creation.inMs() + ", '" + conversation.title + "');";
     	    	statement.executeUpdate(query);
 
