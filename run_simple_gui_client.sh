@@ -16,4 +16,5 @@
 
 LOCAL_MACHINE="localhost@2007"
 
-java -classpath ./bin:./third_party/* codeu.chat.SimpleGuiClientMain "${LOCAL_MACHINE}"
+java -classpath ./bin:./third_party/* codeu.chat.SimpleGuiClientMain "$LOCAL_MACHINE"
+
